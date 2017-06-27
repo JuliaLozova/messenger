@@ -9,5 +9,8 @@ answers = [
 ]
 
 print("Welcome to Jchat")
+print("Say 'Bye' to end chat")
 userInput = raw_input("Let's Chat!\n")
-print random.choice(answers)
+while userInput != "Bye":
+    print random.choice(answers)
+    userInput = raw_input("")
