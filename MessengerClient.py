@@ -1,5 +1,4 @@
 import socket
-import sys
 
 HOST = ''                 # The remote host
 PORT = 50007              # The same port as used by the server
