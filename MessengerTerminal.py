@@ -16,6 +16,8 @@ data = raw_input('Lets chat!-->')
 while 1:
     data = conn.recv(1024)
     if not data: break
+    
+    print data
     print 'Recieved-->', repr(data)
     data = raw_input("-->")
     conn.send(data)
