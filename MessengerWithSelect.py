@@ -23,7 +23,7 @@ import queue
 #             exceptional.append(buf)
     
 #     return readable, writable, exceptional
-PORT = 50017  
+PORT = 50018  
 HOST = '127.0.0.1'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = (HOST, PORT)
@@ -33,9 +33,27 @@ outputs = []
 message_queues = {}
 timeout = 1
 
+def writingFunc(item):
+    try:
+        next_msg = message_queues[item].get_nowait()
+    except queue.Empty:
+        outputs.remove(item)
+    else:
+        item.send(next_msg)  
+        sys.stdout.write('[Me] '); sys.stdout.flush() 
+
+def exceptionalFunc(item):
+    print('exception condition on', item.getpeername())
+    # Stop listening for input on the connection
+    inputs.remove(item)
+    if item in outputs:
+        outputs.remove(item)
+        item.close()
+    # Remove message queue
+    del message_queues[item]
+
 def messengerServer():
     
-
     #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print('starting up on {} port {}'.format(*server_address))
     
@@ -88,23 +106,25 @@ def messengerServer():
                         outputs.append(sock)
 
         for item in writable:
-            try:
-                next_msg = message_queues[item].get_nowait()
-            except queue.Empty:
-                outputs.remove(item)
-            else:
-                item.send(next_msg)  
-                sys.stdout.write('[Me] '); sys.stdout.flush()   
+            writingFunc(item)
+            # try:
+            #     next_msg = message_queues[item].get_nowait()
+            # except queue.Empty:
+            #     outputs.remove(item)
+            # else:
+            #     item.send(next_msg)  
+            #     sys.stdout.write('[Me] '); sys.stdout.flush()   
                                                   
         for item in exceptional:
-            print('exception condition on', item.getpeername())
-            # Stop listening for input on the connection
-            inputs.remove(item)
-            if item in outputs:
-                outputs.remove(item)
-            item.close()
-            # Remove message queue
-            del message_queues[item]
+            exceptionalFunc(item)
+            # print('exception condition on', item.getpeername())
+            # # Stop listening for input on the connection
+            # inputs.remove(item)
+            # if item in outputs:
+            #     outputs.remove(item)
+            # item.close()
+            # # Remove message queue
+            # del message_queues[item]
 
 def messengerClient():
     #message_queues = {}
@@ -118,8 +138,8 @@ def messengerClient():
 
     #inputs = [s, sys.stdin]
     #outputs = []
-
     #timeout = 1
+    
     print "Welcome to Jchat! You can now start sending messages!"
     sys.stdout.write('[Me] '); sys.stdout.flush()
     while inputs:
@@ -154,23 +174,25 @@ def messengerClient():
                         outputs.append(sock)
             
         for item in writable:
-            try:
-                next_msg = message_queues[item].get_nowait()
-            except queue.Empty:
-                outputs.remove(item)
-            else:
-                item.send(next_msg)
-                sys.stdout.write('[Me] '); sys.stdout.flush()    
+            writingFunc(item)
+            # try:
+            #     next_msg = message_queues[item].get_nowait()
+            # except queue.Empty:
+            #     outputs.remove(item)
+            # else:
+            #     item.send(next_msg)
+            #     sys.stdout.write('[Me] '); sys.stdout.flush()    
         
         for item in exceptional:
-            print('exception condition on', item.getpeername())
-            # Stop listening for input on the connection
-            inputs.remove(item)
-            if item in outputs:
-                outputs.remove(item)
-                item.close()
-            # Remove message queue
-            del message_queues[item]
+            exceptionalFunc(item)
+            # print('exception condition on', item.getpeername())
+            # # Stop listening for input on the connection
+            # inputs.remove(item)
+            # if item in outputs:
+            #     outputs.remove(item)
+            #     item.close()
+            # # Remove message queue
+            # del message_queues[item]
 
 if __name__ == "__main__":
     if sys.argv[1] == "server":
