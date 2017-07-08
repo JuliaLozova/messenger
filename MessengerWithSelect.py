@@ -3,7 +3,14 @@ import select
 import sys
 import queue
 
-PORT = 50018  
+from string import printable
+from curses import erasechar, wrapper
+
+#Terminal input change
+printable = map(ord, printable)
+
+#Socket info
+PORT = 50019  
 HOST = '127.0.0.1'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = (HOST, PORT)
@@ -13,6 +20,7 @@ outputs = []
 message_queues = {}
 timeout = 1
 
+#Functions being defined 
 def interpretData(item, message_queues):
     data = item.recv(1024)
     if data:
@@ -20,19 +28,73 @@ def interpretData(item, message_queues):
        print('Friend:{!r}'.format(data, item.getpeername()))    
     else:
        # Interpret empty result as closed connection
-       print('closing', addr)
+       print('closing', server_address)
        inputs.remove(item)
        item.close()
        #Remove message queue  
        del message_queues[item]
 
-def inputData(item, message_queues):
-    inp = sys.stdin.readline()
+def inputData(stdscr): 
+    #inp = sys.stdin.readline()
+    #print type(inp)
+    
     socket_list = message_queues.keys()
+    Y,X = stdscr.getyx()
+    #rawInputs = []
+    inpString = []
+    while True:
+        inpChar = stdscr.getch()
+        if inpChar in (13, 10):
+            break
+        elif inpChar == 263:
+            y, x = stdscr.getyx
+            if x > X:
+                del inpChar[-1]
+                stdscr.move(y, (x-1))
+                stdscr.clrtoeol()
+                stdscr.refresh()
+        elif inpChar in printable:
+             inpString.append(chr(inpChar))
+             stdscr.addch(inpChar)
+    inp = "".join(inpString)
+    #print inp
+    return inp
+    #print inp
     for sock in socket_list:
         message_queues[sock].put(inp)
         if sock not in outputs:
             outputs.append(sock)
+
+
+def prompt(stdscr, y, x, prompt = ">>>"):
+    stdscr.move(y, x)
+    stdscr.clrtoeol()
+    stdscr.addstr(y, x, prompt)
+    return inputData(stdscr)
+
+def display(stdscr):
+    Y, X = stdscr.getmaxyx()
+    lines = []
+    max_lines = (Y - 3)
+
+    stdscr.clear()
+
+    while True:
+        inpString = prompt(stdscr, (Y - 1), 0)
+        if inpString == "Bye":
+            break
+        #scrolling
+
+        if len(lines) > max_lines:
+            lines = lines[1:]
+            stdscr.clear()
+            for i, line in enumerate(lines):
+                stdscr.addstr(i, 0, line)
+
+        stdscr.addstr(len(lines), 0, inpString)
+        lines.append(inpString)
+
+        stdscr.refresh()
 
 def writingFunc(item):
     try:
@@ -54,6 +116,7 @@ def exceptionalFunc(item):
     # Remove message queue
     del message_queues[item]
 
+#Messenger Server Function -- 
 def messengerServer():
     
     print('starting up on {} port {}'.format(*server_address))
@@ -80,29 +143,10 @@ def messengerServer():
                 
             elif item is not sys.stdin:
                 interpretData(item, message_queues)
-                #data = item.recv(1024)
-                #if data:
-                #    # A readable client socket has data
-                #    print('Friend:{!r}'.format(data, item.getpeername()))
-
-                #else:
-                #    # Interpret empty result as closed connection
-                #    print('closing', addr)
-                #    inputs.remove(item)
-                #    item.close()
-                #    #Remove message queue  
-                #    del message_queues[item]
                 
             else:
+
                 inputData(item, message_queues)
-                #inp = sys.stdin.write('[Me]:')
-                #sys.stdout.write('[Me]') + inp 
-                # inp = sys.stdin.readline()
-                # socket_list = message_queues.keys()
-                # for sock in socket_list:
-                #     message_queues[sock].put(inp)
-                #     if sock not in outputs:
-                #         outputs.append(sock)
 
         for item in writable:
             writingFunc(item)   
@@ -110,6 +154,7 @@ def messengerServer():
         for item in exceptional:
             exceptionalFunc(item)
 
+#Client function -- 
 def messengerClient():
     s.connect((HOST, PORT))
 
@@ -127,37 +172,18 @@ def messengerClient():
 
             if item is not sys.stdin:
                 interpretData(item, message_queues)
-                #data = item.recv(1024)
-                #if data:
-                #    # A readable client socket has data
-                #    print('Friend:{!r}'.format(data, item.getpeername()))
-#
-                #else:
-                #    # Interpret empty result as closed connection
-                #    print('closing', addr)
-                #    inputs.remove(item)
-                #    item.close()
-                #    #Remove message queue  
-                #    del message_queues[item]
                     
             else:
                 inputData(item, message_queues)
-                #inp = sys.stdin.write('[Me]:')
-                #sys.stdout.write('[Me]') + inp 
-                # inp = sys.stdin.readline()
-                # socket_list = message_queues.keys()
-                # for sock in socket_list:
-                #     message_queues[sock].put(inp)
-                #     if sock not in outputs:
-                #         outputs.append(sock)
             
         for item in writable:
             writingFunc(item)    
         
         for item in exceptional:
             exceptionalFunc(item)
-
+#wrapper(display)
 if __name__ == "__main__":
+    wrapper(display)
     if sys.argv[1] == "server":
         messengerServer()
     else:
