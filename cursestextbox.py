@@ -1,6 +1,7 @@
 
 from string import printable
 from curses import erasechar, wrapper
+import sys
 
 PRINTABLE = map(ord, printable)
 #curses.KEY_BACKSPACE
@@ -57,9 +58,9 @@ def main(stdscr):
 
         stdscr.addstr(len(lines), 0, s)
         lines.append(s)
-        print type(s)
-        print s
+        #print type(s)
+        #print s
 
         stdscr.refresh()
-
+    #print s
 wrapper(main)

@@ -34,12 +34,14 @@ def interpretData(item, message_queues):
        #Remove message queue  
        del message_queues[item]
 
-def inputData(stdscr, message_queues): 
+def inputData(stdscr): 
     #inp = sys.stdin.readline()
     #print type(inp)
-    #rawInp = []
+    
     socket_list = message_queues.keys()
     Y,X = stdscr.getyx()
+    #rawInputs = []
+    inpString = []
     while True:
         inpChar = stdscr.getch()
         if inpChar in (13, 10):
@@ -52,12 +54,13 @@ def inputData(stdscr, message_queues):
                 stdscr.clrtoeol()
                 stdscr.refresh()
         elif inpChar in printable:
-             inputs.append(chr(inpChar))
+             inpString.append(chr(inpChar))
              stdscr.addch(inpChar)
-        #print inputs
-    inp = "".join(inputs)
-    print inputs
+    inp = "".join(inpString)
+    print inp
+    print type(inp)
     #return inp
+    #print inp
     for sock in socket_list:
         message_queues[sock].put(inp)
         if sock not in outputs:
@@ -74,26 +77,23 @@ def display(stdscr):
     Y, X = stdscr.getmaxyx()
     lines = []
     max_lines = (Y - 3)
+
     stdscr.clear()
 
-    #if sys.argv[1] == "server":
-    #    messengerServer()
-    #else:
-    #    messengerClient()
-    
     while True:
-        inputs = prompt(stdscr, (Y - 1), 0)
-        if inputs == "Bye":
+        inpString = prompt(stdscr, (Y - 1), 0)
+        if inpString == "Bye":
             break
         #scrolling
+
         if len(lines) > max_lines:
             lines = lines[1:]
             stdscr.clear()
             for i, line in enumerate(lines):
                 stdscr.addstr(i, 0, line)
 
-        stdscr.addstr(len(lines), 0, inputs)
-        lines.append(inputs)
+        stdscr.addstr(len(lines), 0, inpString)
+        lines.append(inpString)
 
         stdscr.refresh()
 
@@ -104,7 +104,7 @@ def writingFunc(item):
         outputs.remove(item)
     else:
         item.send(next_msg)  
-        #sys.stdout.write('[Me] '); sys.stdout.flush() 
+        sys.stdout.write('[Me] '); sys.stdout.flush() 
 
 def exceptionalFunc(item):
     print('exception condition on', item.getpeername())
@@ -120,19 +120,15 @@ def exceptionalFunc(item):
 #Messenger Server Function -- 
 def messengerServer():
     
-    wrapper(display)
-
-    sys.stdout.write('starting up on {} port {}'.format(*server_address))
+    print('starting up on {} port {}'.format(*server_address))
     
     s.setblocking(0)
     s.bind((HOST, PORT))
     s.listen(5) 
-    
-    sys.stdout.write("Welcome to Jchat! You can now start sending messages!")
-    #inputs = prompt(stdscr, (Y - 1), 0)
-    #sys.stdout.write('[Me] '); sys.stdout.flush()
+
+    print "Welcome to Jchat! You can now start sending messages!"
+    sys.stdout.write('[Me] '); sys.stdout.flush()
     while inputs:
-    
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
 
         if not (readable or writable or exceptional):
@@ -150,6 +146,7 @@ def messengerServer():
                 interpretData(item, message_queues)
                 
             else:
+
                 inputData(item, message_queues)
 
         for item in writable:
@@ -164,11 +161,8 @@ def messengerClient():
 
     message_queues[s] = queue.Queue()
     
-    wrapper(display)
-    
-    sys.stdout.write("Welcome to Jchat! You can now start sending messages!")
-    #inputs = prompt(stdscr, (Y - 1), 0)
-    #sys.stdout.write('[Me] '); sys.stdout.flush()
+    print "Welcome to Jchat! You can now start sending messages!"
+    sys.stdout.write('[Me] '); sys.stdout.flush()
     while inputs:
         readable, writable, exceptional = select.select(
             inputs, outputs, inputs, timeout)
@@ -181,7 +175,7 @@ def messengerClient():
                 interpretData(item, message_queues)
                     
             else:
-                inputData(stdscr, message_queues)
+                inputData(item, message_queues)
             
         for item in writable:
             writingFunc(item)    
@@ -189,14 +183,13 @@ def messengerClient():
         for item in exceptional:
             exceptionalFunc(item)
 #wrapper(display)
-
 if __name__ == "__main__":
     #wrapper(display)
     if sys.argv[1] == "server":
         messengerServer()
     else:
         messengerClient()
-    #wrapper(display)
+    
 
 #conn, addr = item.accept()
 
