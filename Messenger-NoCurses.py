@@ -54,20 +54,22 @@ def exceptionalFunc(item):
     # Remove message queue
     del message_queues[item]
 
-def manyFunctions():
+def manyFunctions(makeConnection):
     while inputs:
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
         if not (readable or writable or exceptional):
             #print('  timed out, do some other work here')
             continue
+
         for item in readable:
-            if item is s:
+            
+            if item is s and makeConnection == 1:
                 conn, addr = item.accept()
                 print 'Connected by', addr
                 conn.setblocking(0)
                 inputs.append(conn)
                 message_queues[conn] = queue.Queue()
-                
+
             elif item is not sys.stdin:
                 interpretData(item, message_queues)
                 
@@ -78,6 +80,7 @@ def manyFunctions():
                                                   
         for item in exceptional:
             exceptionalFunc(item)
+
 def messengerServer():
     
     print('starting up on {} port {}'.format(*server_address))
@@ -89,32 +92,8 @@ def messengerServer():
     print "Welcome to Jchat! You can now start sending messages!"
     sys.stdout.write('[Me] '); sys.stdout.flush()
     
-    manyFunctions()
-    # while inputs:
-    #     readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
-
-    #     if not (readable or writable or exceptional):
-    #         #print('  timed out, do some other work here')
-    #         continue
-    #     for item in readable:
-    #         if item is s:
-    #             conn, addr = item.accept()
-    #             print 'Connected by', addr
-    #             conn.setblocking(0)
-    #             inputs.append(conn)
-    #             message_queues[conn] = queue.Queue()
-                
-    #         elif item is not sys.stdin:
-    #             interpretData(item, message_queues)
-                
-    #         else:
-    #             inputData(item, message_queues)
-
-    #     for item in writable:
-    #         writingFunc(item)   
-                                                  
-    #     for item in exceptional:
-    #         exceptionalFunc(item)
+    makeConnection = 1
+    manyFunctions(makeConnection)
 
 def messengerClient():
     s.connect((HOST, PORT))
@@ -123,26 +102,9 @@ def messengerClient():
     
     print "Welcome to Jchat! You can now start sending messages!"
     sys.stdout.write('[Me] '); sys.stdout.flush()
-    manyFunctions()
-    # while inputs:
-    #     readable, writable, exceptional = select.select(
-    #         inputs, outputs, inputs, timeout)
-        
-    #     if not (readable or writable or exceptional):
-    #         continue
-    #     for item in readable:
-
-    #             interpretData(item, message_queues)
-    #         if item is not sys.stdin:
-                    
-    #         else:
-    #             inputData(item, message_queues)
-            
-    #     for item in writable:
-    #         writingFunc(item)    
-        
-    #     for item in exceptional:
-    #         exceptionalFunc(item)
+    
+    makeConnection = 0
+    manyFunctions(makeConnection)
 
 if __name__ == "__main__":
     if sys.argv[1] == "server":
