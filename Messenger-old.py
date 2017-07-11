@@ -9,16 +9,16 @@ from curses import erasechar, wrapper
 #Terminal input change
 printable = map(ord, printable)
 
-#Socket info
-PORT = 50019  
-HOST = '127.0.0.1'
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_address = (HOST, PORT)
+def socketInfo(HOST, PORT)
+    PORT = 50019  
+    HOST = '127.0.0.1'
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (HOST, PORT)
 
-inputs = [s, sys.stdin]
-outputs = []
-message_queues = {}
-timeout = 1
+    inputs = [s, sys.stdin]
+    outputs = []
+    message_queues = {}
+    timeout = 1
 
 #Functions being defined 
 def interpretData(item, message_queues):
@@ -57,8 +57,8 @@ def inputData(stdscr):
              inpString.append(chr(inpChar))
              stdscr.addch(inpChar)
     inp = "".join(inpString)
-    print inp
-    print type(inp)
+    #print inp
+    #print type(inp)
     #return inp
     #print inp
     for sock in socket_list:
@@ -73,29 +73,7 @@ def prompt(stdscr, y, x, prompt = ">>>"):
     stdscr.addstr(y, x, prompt)
     return inputData(stdscr)
 
-def display(stdscr):
-    Y, X = stdscr.getmaxyx()
-    lines = []
-    max_lines = (Y - 3)
 
-    stdscr.clear()
-
-    while True:
-        inpString = prompt(stdscr, (Y - 1), 0)
-        if inpString == "Bye":
-            break
-        #scrolling
-
-        if len(lines) > max_lines:
-            lines = lines[1:]
-            stdscr.clear()
-            for i, line in enumerate(lines):
-                stdscr.addstr(i, 0, line)
-
-        stdscr.addstr(len(lines), 0, inpString)
-        lines.append(inpString)
-
-        stdscr.refresh()
 
 def writingFunc(item):
     try:
@@ -127,7 +105,7 @@ def messengerServer():
     s.listen(5) 
 
     print "Welcome to Jchat! You can now start sending messages!"
-    sys.stdout.write('[Me] '); sys.stdout.flush()
+    #sys.stdout.write('[Me] '); sys.stdout.flush()
     while inputs:
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
 
@@ -146,7 +124,6 @@ def messengerServer():
                 interpretData(item, message_queues)
                 
             else:
-
                 inputData(item, message_queues)
 
         for item in writable:
@@ -183,8 +160,31 @@ def messengerClient():
         for item in exceptional:
             exceptionalFunc(item)
 #wrapper(display)
+def main(stdscr):
+    Y, X = stdscr.getmaxyx()
+    lines = []
+    max_lines = (Y - 3)
+    stdscr.clear()
+    stdscr.addstr("Welcome to Jchat")
+    while True:
+        inpString = prompt(stdscr, (Y - 1), 0)
+        if inpString == "Bye":
+            break
+        #scrolling
+
+        if len(lines) > max_lines:
+            lines = lines[1:]
+            stdscr.clear()
+            for i, line in enumerate(lines):
+                stdscr.addstr(i, 0, line)
+
+        stdscr.addstr(len(lines), 0, inpString)
+        lines.append(inpString)
+
+        stdscr.refresh()
+
 if __name__ == "__main__":
-    #wrapper(display)
+    #wrapper(main)
     if sys.argv[1] == "server":
         messengerServer()
     else:

@@ -2,11 +2,20 @@ import socket
 import select
 import sys
 import queue
+import os
+#hostname = "google.com" #example
 
-PORT = 50018  
+
+
+PORT = 50019  
 HOST = '127.0.0.1'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = (HOST, PORT)
+#result = s.connect_ex((HOST,PORT))
+#connected = s.connect((HOST, PORT))
+#response = os.system("ping -c 1 " + HOST)
+#print "other r"
+#print response
 
 inputs = [s, sys.stdin]
 outputs = []
@@ -86,9 +95,12 @@ def messengerServer():
     print('starting up on {} port {}'.format(*server_address))
     
     s.setblocking(0)
-    s.bind((HOST, PORT))
+    #binder = s.bind((HOST, PORT))
     s.listen(5) 
-
+    print "here is bind"
+    #s.bind((HOST,PORT))
+    print binder
+    print server_address
     print "Welcome to Jchat! You can now start sending messages!"
     sys.stdout.write('[Me] '); sys.stdout.flush()
     
@@ -96,8 +108,12 @@ def messengerServer():
     manyFunctions(makeConnection)
 
 def messengerClient():
-    s.connect((HOST, PORT))
+    #s.connect((HOST, PORT))
 
+    connected = s.connect((HOST, PORT))
+    print "this is connected:"
+    print connected
+    
     message_queues[s] = queue.Queue()
     
     print "Welcome to Jchat! You can now start sending messages!"
@@ -106,7 +122,46 @@ def messengerClient():
     makeConnection = 0
     manyFunctions(makeConnection)
 
+def doesServerExist(PORT):
+    #print response
+    #print "server Response"
+    #response = os.system("ping -c 1 " + HOST)
+    #print response
+    #
+    #if response == 0:
+    #    messengerServer()
+    #    print "port open"
+    #else:
+    #    #messengerClient()
+    #    print "port closed"
+    while True:
+        #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.bind((HOST, PORT))
+        except OSError as e:
+            if e.errno is 98: ## Errorno 98 means address already bound
+                return True
+            raise e
+        s.close()
+        return False
+
 if __name__ == "__main__":
+    #connected = s.connect((HOST, PORT))
+    #connected = 0
+    #ret = os.system("ping -c 1 " + HOST)
+    #doesServerExist()
+    b = doesServerExist(PORT)
+    print("Is port {0} open {1}".format(PORT,b))
+    
+    #if result == 0:
+    #    print "Port is open"
+    #else:
+    #    print "Port is not open"
+    #if ret != 0:
+    #    print "Host is not up"
+    #else:
+    #    print "Hose is up"
+        
     if sys.argv[1] == "server":
         messengerServer()
     else:

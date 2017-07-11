@@ -38,10 +38,8 @@ def prompt(stdscr, y, x, prompt=">>> "):
 
 def main(stdscr):
     Y, X = stdscr.getmaxyx()
-
     lines = []
     max_lines = (Y - 3)
-
     stdscr.clear()
 
     while True:
