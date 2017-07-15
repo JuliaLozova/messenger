@@ -4,9 +4,9 @@ import sys
 import queue
 import os
 
-PORT = 50015  
+PORT = 50016  
 #print socket.gethostname()
-HOST = '127.0.0.1'
+#HOST = '192.168.1.146'
 # 192.168.1.160
 
 #HOST = ['192.168.1.146']
@@ -14,7 +14,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #print socket.gethostbyname(socket.gethostname())
 #HOST = s.getsockname()[0]
 #print HOST
-server_address = (HOST, PORT)
+#server_address = (HOST, PORT)
 
 inputs = [s, sys.stdin]
 outputs = []
@@ -90,11 +90,11 @@ def manyFunctions(makeConnection):
             exceptionalFunc(item)
 
 def messengerServer():
-    
+    server_address = (getIPaddress(), PORT)
     print('starting up on {} port {}'.format(*server_address))
 
     s.setblocking(0)
-    binder = s.bind((HOST, PORT))
+    binder = s.bind(server_address)
     s.listen(5) 
 
     print "Welcome to Jchat! You can now start sending messages!"
@@ -119,7 +119,12 @@ def messengerClient():
     makeConnection = 0
     manyFunctions(makeConnection)
 
+def getIPaddress():
+    return ([(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1])
+    #print HOST
+ #HOST
 def doesServerExist():
+    #getIPaddress()
     try:
         messengerClient() 
 
