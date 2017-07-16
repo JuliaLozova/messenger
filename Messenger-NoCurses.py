@@ -5,23 +5,14 @@ import queue
 import os
 
 PORT = 50016  
-#print socket.gethostname()
-#HOST = '192.168.1.146'
-# 192.168.1.160
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-#HOST = ['192.168.1.146']
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#print socket.gethostbyname(socket.gethostname())
-#HOST = s.getsockname()[0]
-#print HOST
-#server_address = (HOST, PORT)
-
-inputs = [s, sys.stdin]
+inputs = [sock, sys.stdin]
 outputs = []
 message_queues = {}
 timeout = 1
 
-def interpretData(item, message_queues):
+def recieveMessage(item, message_queues):
     data = item.recv(1024)
     if data:
        # A readable client socket has data
@@ -34,7 +25,7 @@ def interpretData(item, message_queues):
        #Remove message queue  
        del message_queues[item]
 
-def inputData(item, message_queues):
+def readStdin(item, message_queues):
     inp = sys.stdin.readline()
     socket_list = message_queues.keys()
     for sock in socket_list:
@@ -42,7 +33,7 @@ def inputData(item, message_queues):
         if sock not in outputs:
             outputs.append(sock)
 
-def writingFunc(item):
+def displayStdin(item):
     try:
         next_msg = message_queues[item].get_nowait()
     except queue.Empty:
@@ -51,7 +42,7 @@ def writingFunc(item):
         item.send(next_msg)  
         sys.stdout.write('[Me] '); sys.stdout.flush() 
 
-def exceptionalFunc(item):
+def handleErrors(item):
     print('exception condition on', item.getpeername())
     
     # Stop listening for input on the connection
@@ -62,7 +53,7 @@ def exceptionalFunc(item):
     # Remove message queue
     del message_queues[item]
 
-def manyFunctions(makeConnection):
+def handleMessages(makeConnection):
     while inputs:
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
         if not (readable or writable or exceptional):
@@ -71,73 +62,61 @@ def manyFunctions(makeConnection):
 
         for item in readable:
             
-            if item is s and makeConnection == 1:
+            if item is sock and acceptConnection:
                 conn, addr = item.accept()
                 print 'Connected by', addr
                 conn.setblocking(0)
                 inputs.append(conn)
                 message_queues[conn] = queue.Queue()
 
-            elif item is not sys.stdin:
-                interpretData(item, message_queues)
-                
+            elif item is sys.stdin:
+                readStdin(item, message_queues)
             else:
-                inputData(item, message_queues)
+                recieveMessage(item, message_queues)
         for item in writable:
-            writingFunc(item)   
+            displayStdin(item)   
                                                   
         for item in exceptional:
-            exceptionalFunc(item)
+            handleErrors(item)
 
 def messengerServer():
     server_address = (getIPaddress(), PORT)
     print('starting up on {} port {}'.format(*server_address))
 
-    s.setblocking(0)
-    binder = s.bind(server_address)
-    s.listen(5) 
+    sock.setblocking(0)
+    binder = sock.bind(server_address)
+    sock.listen(5) 
 
     print "Welcome to Jchat! You can now start sending messages!"
     sys.stdout.write('[Me] '); sys.stdout.flush()
     
-    makeConnection = 1
-    manyFunctions(makeConnection)
+    acceptConnection = True
+    handleMessages(acceptConnection)
 
 def messengerClient():
-    connected = s.connect((friendIP, PORT))
-    #except Exception as e:
-    #    HOST = 
-    #    connected = s.connect((HOST, PORT))
-    #local_ip_address = s.getsockname()[0]
-    #print local_ip_address
-    
-    message_queues[s] = queue.Queue()
+    connected = sock.connect((friendIP, PORT))
+    message_queues[sock] = queue.Queue()
     
     print "Welcome to Jchat! You can now start sending messages!"
     sys.stdout.write('[Me] '); sys.stdout.flush()
     
-    makeConnection = 0
-    manyFunctions(makeConnection)
+    acceptConnection = False
+    handleMessages(acceptConnection)
 
 def getIPaddress():
-    return ([(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1])
-    #print HOST
- #HOST
-def doesServerExist():
-    #getIPaddress()
+    return ([(sock.connect(('8.8.8.8', 53)), sock.getsockname()[0], sock.close()) for sock in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1])
+
+def chooseClientOrServer():
     try:
         messengerClient() 
-
     except Exception as e: 
-        #print("something's wrong with %s:%d. Exception is %s" % (HOST, PORT, e))
+        #print("something'sock wrong with %sock:%d. Exception is %sock" % (HOST, PORT, e))
         messengerServer()
-
 
 if __name__ == "__main__":
     friendIP = sys.argv[1]
-    doesServerExist()
+    chooseClientOrServer()
     
-
 # def select.select(inputs, outputs, error_bufs):
 #     readable = []
 #     writable = []
