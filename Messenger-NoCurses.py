@@ -53,7 +53,7 @@ def handleErrors(item):
     # Remove message queue
     del message_queues[item]
 
-def handleMessages(makeConnection):
+def handleMessages(acceptConnection):
     while inputs:
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
         if not (readable or writable or exceptional):
@@ -104,6 +104,7 @@ def messengerClient():
     handleMessages(acceptConnection)
 
 def getIPaddress():
+    #print "yes"
     return ([(sock.connect(('8.8.8.8', 53)), sock.getsockname()[0], sock.close()) for sock in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1])
 
 def chooseClientOrServer():
