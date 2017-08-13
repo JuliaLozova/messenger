@@ -27,9 +27,7 @@ def recieveMessage(item, message_queues):
        # A readable client socket has data
         with term.location(0, (term.height - 1)):
             print 'Friend: '+ format(data),
-        with term.location(0, term.height - 1):
-            print "ME: ",
-        print term.move(term.height - 1, 4),
+        refresh_input_line()
     else:
        # Interpret empty result as closed connection
        print('closing')
@@ -41,9 +39,7 @@ def recieveMessage(item, message_queues):
 def readAndPrintStdin(item, message_queues):
     inp = sys.stdin.readline()
 
-    with term.location(0, term.height - 1):
-        print "ME: ",
-    print term.move(term.height - 1, 4),
+    refresh_input_line()
     socket_list = message_queues.keys()
     for sock in socket_list:
         message_queues[sock].put(inp)
@@ -82,9 +78,7 @@ def handleBuffers(isServer):
             conn, addr = item.accept()
             with term.location(0, (term.height - 2)):
                 print 'Client connected ', addr
-            with term.location(0, term.height - 1):
-                print "ME: ",
-            print term.move(term.height - 1, 4),
+            refresh_input_line()
             conn.setblocking(0)
             inputs.append(conn)
             message_queues[conn] = queue.Queue()
@@ -132,6 +126,11 @@ def chooseClientOrServer():
     
     return isServer
 
+def refresh_input_line():
+    with term.location(0, term.height - 1):
+        print "ME: ",
+    print term.move(term.height - 1, 4),
+
 def signal_handler(signal, frame):
     sock.shutdown()
     sock.close()
@@ -142,8 +141,6 @@ if __name__ == "__main__":
     friendIP = sys.argv[1]
     with term.hidden_cursor(), term.fullscreen():
         isServer = chooseClientOrServer()
-        with term.location(0, term.height - 1):
-            print "ME: ",
-        print term.move(term.height - 1, 4),
+        refresh_input_line()
         while inputs:
             handleBuffers(isServer)
