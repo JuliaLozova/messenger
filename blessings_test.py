@@ -45,7 +45,6 @@ def readAndPrintStdin(item, message_queues):
         message_queues[sock].put(inp)
         if sock not in outputs:
             outputs.append(sock)
-
     #return outputs
 def sendMessage(item):
     try:
@@ -76,7 +75,7 @@ def handleBuffers(isServer):
         
         if item is sock and isServer:
             conn, addr = item.accept()
-            with term.location(0, (term.height - 2)):
+            with term.location(0, (term.height - 1)):
                 print 'Client connected ', addr
             refresh_input_line()
             conn.setblocking(0)
@@ -98,7 +97,7 @@ def getIPaddress():
 
 def startServer():
     server_address = (getIPaddress(), PORT)
-    with term.location(0, (term.height - 2)):
+    with term.location(0, (term.height - 3)):
         print('Starting server @ {}:{}'.format(*server_address))
 
     sock.setblocking(0)
@@ -108,7 +107,8 @@ def startServer():
 
 def connectAsClient():
     connected = sock.connect((friendIP, PORT))
-    print "Connected as Client"
+    with term.location(0, (term.height - 3)):
+        print "Connected as Client"
     message_queues[sock] = queue.Queue()
 
 def chooseClientOrServer():
