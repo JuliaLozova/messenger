@@ -22,26 +22,30 @@ timeout = 0.01
 
 term = Terminal()
 
-
-def recieveMessage(item, message_queues):
+def recieveMessage(item, message_queues, user_map):
     data = item.recv(1024)
     if data:
-       # A readable client socket has data
+        user_map[item] = data.split(":")[0]
+        # A readable client socket has data
         with term.location(0, (term.height - 1)):
-            print 'Friend: ' + format(data),
+            print format(data),
     else:
         # Interpret empty result as closed connection
         with term.location(0, (term.height - 1)):
-            print('Friend has disconnected')
+            if item in user_map:
+                print(user_map[item] + ' has disconnected')
+            else:
+                print('Friend has disconnected')
         inputs.remove(item)
         item.close()
         # Remove message queue
         del message_queues[item]
+    return data
 
 
-def readAndPrintStdin(inp, message_queues):
+def readAndPrintStdin(inp, message_queues, user_name):
     socket_list = message_queues.keys()
-    inp = ''.join(inpList)
+    inp = user_name + ': ' + ''.join(inpList)
     for sock in socket_list:
         message_queues[sock].put(inp)
         if sock not in outputs:
@@ -68,8 +72,7 @@ def handleErrors(item):
     # Remove message queue
     del message_queues[item]
 
-
-def handleBuffers(isServer, inpList):
+def handleBuffers(isServer, inpList, user_name, user_map):
     readable, writable, exceptional = select.select(
         inputs, outputs, inputs, timeout)
     if not (readable or writable or exceptional):
@@ -86,7 +89,15 @@ def handleBuffers(isServer, inpList):
             message_queues[conn] = queue.Queue()
 
         elif item is not sys.stdin:
-            recieveMessage(item, message_queues)
+            msg = recieveMessage(item, message_queues, user_map)
+            if isServer:
+                socket_list = message_queues.keys()
+                for client_sock in socket_list:
+                    if client_sock is not item:
+                        message_queues[client_sock].put(msg)
+                        if client_sock not in outputs:
+                            outputs.append(client_sock)
+                
     for item in writable:
         sendMessage(item)
 
@@ -99,7 +110,7 @@ def handleBuffers(isServer, inpList):
         inpList.append(str(val))
         inp = ''.join(inpList)
 
-        if 'quit' in inp:
+        if ord(val) is 3:
             signal_handler()
 
         elif val.is_sequence:
@@ -108,7 +119,7 @@ def handleBuffers(isServer, inpList):
                 inp = ''.join(inpList)
                 with term.location(0, term.height - 1):
                     print "ME: " + inp,
-                readAndPrintStdin(inp, message_queues)
+                readAndPrintStdin(inp, message_queues, user_name)
                 del inpList[:]
 
             elif val.name == "KEY_DELETE":
@@ -171,11 +182,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
     friendIP = sys.argv[1]
+    user_name = raw_input("Enter Username: ")
     with term.hidden_cursor(), term.fullscreen(), term.raw():
         isServer = chooseClientOrServer()
         inpList = []
-        refresh_input_line(inpList)
+        user_map = {}
 
         while inputs:
-            inpList = handleBuffers(isServer, inpList)
+            inpList = handleBuffers(isServer, inpList, user_name, user_map)
             refresh_input_line(inpList)
