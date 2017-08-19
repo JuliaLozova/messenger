@@ -17,7 +17,7 @@ PORT = 50629
 inputs = [sock, sys.stdin]
 outputs = []
 message_queues = {}
-timeout = 2.0
+timeout = 0.01
 
 
 term = Terminal()
