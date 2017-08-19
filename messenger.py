@@ -31,8 +31,8 @@ def recieveMessage(item, message_queues):
             print 'Friend: ' + format(data),
     else:
         # Interpret empty result as closed connection
-        with term.location(0, (term.height - 2)):
-            print('closing\n')
+        with term.location(0, (term.height - 1)):
+            print('Friend has disconnected')
         inputs.remove(item)
         item.close()
         # Remove message queue
